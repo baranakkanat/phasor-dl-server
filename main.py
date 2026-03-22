@@ -36,6 +36,15 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         "noplaylist": True,
         "quiet": True,
         "no_warnings": True,
+        # YouTube bot detection bypass
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["mweb"],
+                "player_skip": ["webpage"],
+            }
+        },
+        "cookiefile": None,
+        "source_address": "0.0.0.0",
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
@@ -97,8 +106,4 @@ async def download(req: DownloadRequest):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
-
-@app.get("/health")
-def health():
     return {"status": "ok"}
