@@ -36,6 +36,9 @@ async def download(req: DownloadRequest):
         "--audio-quality", "0",
         "-o", output_template,
         "--no-progress",
+        "--age-limit", "0",
+        "--extractor-args", "youtube:player_client=ios,web_embedded",
+        "--add-header", "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "--", req.url,
     ]
 
