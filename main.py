@@ -98,3 +98,7 @@ async def download(req: DownloadRequest):
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
