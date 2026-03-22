@@ -1,7 +1,8 @@
+import asyncio
 import os
 import tempfile
-from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import yt_dlp
 from fastapi import FastAPI, HTTPException
@@ -26,37 +27,45 @@ MEDIA_TYPES = {
 
 
 def _download(url: str, fmt: str, tmp_dir: str) -> Path:
-    output_template = os.path.join(tmp_dir, "%(title)s.%(ext)s")
-
-    postprocessors = [
-        {
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": fmt,
-            **({"preferredquality": "320"} if fmt == "mp3" else {}),
-        }
-    ]
+    # Use a fixed stem so we can reliably find the output after postprocessing
+    output_template = os.path.join(tmp_dir, "audio.%(ext)s")
 
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": output_template,
         "noplaylist": True,
-        "postprocessors": postprocessors,
         "quiet": True,
         "no_warnings": True,
-        "age_limit": 0,
-        "extractor_args": {"youtube": {"player_client": ["ios", "web_embedded"]}},
-        "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        },
+        "postprocessors": [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": fmt,
+                **({"preferredquality": "320"} if fmt == "mp3" else {}),
+            }
+        ],
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
+        info = ydl.extract_info(url, download=True)
 
-    files = list(Path(tmp_dir).iterdir())
+    # After postprocessing the extension will be fmt; find that file
+    expected = Path(tmp_dir) / f"audio.{fmt}"
+    if expected.exists():
+        # Rename to the video title for a nicer download filename
+        title = info.get("title", "audio").replace("/", "-").replace("\x00", "")
+        final = Path(tmp_dir) / f"{title}.{fmt}"
+        expected.rename(final)
+        return final
+
+    # Fallback: pick any file with the right extension
+    matches = list(Path(tmp_dir).glob(f"*.{fmt}"))
+    if matches:
+        return matches[0]
+
+    # Last resort: any file that isn't a temp partial
+    files = [f for f in Path(tmp_dir).iterdir() if f.suffix != ".part"]
     if not files:
-        raise RuntimeError("No file produced by yt-dlp")
-
+        raise RuntimeError("No output file produced by yt-dlp")
     return files[0]
 
 
@@ -68,7 +77,6 @@ async def download(req: DownloadRequest):
     fmt = req.format.lower() if req.format.lower() in SUPPORTED_FORMATS else "mp3"
     tmp_dir = tempfile.mkdtemp()
 
-    import asyncio
     loop = asyncio.get_event_loop()
     try:
         out_file = await loop.run_in_executor(executor, _download, req.url, fmt, tmp_dir)
@@ -77,7 +85,7 @@ async def download(req: DownloadRequest):
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    content_type = MEDIA_TYPES.get(out_file.suffix.lstrip("."), "application/octet-stream")
+    content_type = MEDIA_TYPES.get(fmt, "application/octet-stream")
 
     return FileResponse(
         path=str(out_file),
