@@ -28,19 +28,34 @@ async def download(req: DownloadRequest):
     tmp_dir = tempfile.mkdtemp()
     output_template = os.path.join(tmp_dir, "%(title)s.%(ext)s")
 
-    cmd = [
-        "yt-dlp",
-        "--no-playlist",
-        "-x",
-        "--audio-format", fmt,
-        "--audio-quality", "0",
-        "-o", output_template,
-        "--no-progress",
-        "--age-limit", "0",
-        "--extractor-args", "youtube:player_client=ios,web_embedded",
-        "--add-header", "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "--", req.url,
-    ]
+    # For wav, download bestaudio and convert with ffmpeg manually.
+    # For other formats, let yt-dlp handle conversion via -x.
+    if fmt == "wav":
+        cmd = [
+            "yt-dlp",
+            "--no-playlist",
+            "-f", "bestaudio",
+            "-o", output_template,
+            "--no-progress",
+            "--age-limit", "0",
+            "--extractor-args", "youtube:player_client=ios,web_embedded",
+            "--add-header", "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "--", req.url,
+        ]
+    else:
+        cmd = [
+            "yt-dlp",
+            "--no-playlist",
+            "-x",
+            "--audio-format", fmt,
+            "--audio-quality", "0",
+            "-o", output_template,
+            "--no-progress",
+            "--age-limit", "0",
+            "--extractor-args", "youtube:player_client=ios,web_embedded",
+            "--add-header", "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "--", req.url,
+        ]
 
     proc = await asyncio.create_subprocess_exec(
         *cmd,
@@ -59,6 +74,21 @@ async def download(req: DownloadRequest):
         raise HTTPException(status_code=500, detail="No file produced by yt-dlp")
 
     out_file = files[0]
+
+    if fmt == "wav":
+        wav_path = out_file.with_suffix(".wav")
+        ffmpeg_proc = await asyncio.create_subprocess_exec(
+            "ffmpeg", "-y", "-i", str(out_file), str(wav_path),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, ffmpeg_err = await ffmpeg_proc.communicate()
+        if ffmpeg_proc.returncode != 0:
+            err_msg = ffmpeg_err.decode(errors="replace").strip().splitlines()
+            raise HTTPException(status_code=500, detail=err_msg[-1] if err_msg else "ffmpeg conversion failed")
+        out_file.unlink(missing_ok=True)
+        out_file = wav_path
+
     filename = out_file.name
 
     media_types = {
