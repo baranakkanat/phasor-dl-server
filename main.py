@@ -119,3 +119,15 @@ async def listformats(url: str = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"):
         info = ydl.extract_info(url, download=False)
     formats = [{"id": f["format_id"], "ext": f["ext"], "acodec": f.get("acodec","-"), "vcodec": f.get("vcodec","-")} for f in info.get("formats", [])]
     return {"formats": formats}
+
+@app.get("/listformats")
+async def listformats(url: str = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"):
+    ydl_opts = {
+        "quiet": True,
+        "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
+        "extractor_args": {"youtube": {"player_client": ["mweb"]}},
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+    formats = [{"id": f["format_id"], "ext": f["ext"], "acodec": f.get("acodec","-"), "vcodec": f.get("vcodec","-")} for f in info.get("formats", [])]
+    return {"formats": formats}
