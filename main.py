@@ -39,6 +39,8 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         "format": "18/bestaudio/best",
         "outtmpl": output_template,
         "noplaylist": True,
+        "extractor_args": {"youtube": {"player_client": ["android"]}},
+        "http_headers": {"User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip"},
         "quiet": True,
         "no_warnings": True,
         "postprocessors": [
