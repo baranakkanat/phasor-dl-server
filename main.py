@@ -24,7 +24,7 @@ def get_cookie_file():
     if not b64:
         return None
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="wb")
-    tmp.write(base64.b64decode(b64))
+    import gzip; tmp.write(gzip.decompress(base64.b64decode(b64)))
     tmp.close()
     return tmp.name
 
