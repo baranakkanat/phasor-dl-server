@@ -34,7 +34,7 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
     cookie_file = next((p for p in ['/app/cookies.txt', os.path.join(_dir, 'cookies.txt')] if os.path.exists(p)), get_cookie_file())
     
     ydl_opts = {
-        "format": "18/best",
+        "format": "140/139/bestaudio[ext=m4a]/251/249/bestaudio",
         "outtmpl": output_template,
         "noplaylist": True,
         "quiet": True,
