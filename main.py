@@ -43,6 +43,7 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         "http_headers": {"User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip"},
         "quiet": True,
         "no_warnings": True,
+        "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
         "proxy": "socks5://127.0.0.1:40000",
         "postprocessors": [
             {
