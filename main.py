@@ -43,6 +43,8 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         "verbose": True,
         "no_warnings": True,
         "no_check_formats": True,
+        "remote_components": {"ejs:npm"},
+        "extractor_args": {"youtube": {"player_client": ["web_creator"]}},
         "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
     }
     if cookie_file:
