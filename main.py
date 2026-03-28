@@ -4,7 +4,9 @@ import os
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import os
 import yt_dlp
+os.environ["PATH"] = os.environ.get("PATH", "") + ":/home/render/.deno/bin:/root/.deno/bin"
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
