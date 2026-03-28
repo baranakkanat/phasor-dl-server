@@ -40,11 +40,6 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         "noplaylist": True,
         "quiet": True,
         "no_warnings": True,
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["tv_embedded", "web_embedded", "ios"],
-            }
-        },
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
