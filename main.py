@@ -46,7 +46,6 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         "no_warnings": True,
         "no_check_formats": True,
         "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
-        "extractor_args": {"youtube": {"player_client": ["tv_embedded"]}},
     }
 
     if cookie_file:
@@ -113,7 +112,6 @@ async def listformats(url: str = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"):
     ydl_opts = {
         "quiet": False,
         "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
-        "extractor_args": {"youtube": {"player_client": ["tv_embedded"]}},
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
@@ -125,7 +123,6 @@ async def listformats(url: str = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"):
     ydl_opts = {
         "quiet": True,
         "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
-        "extractor_args": {"youtube": {"player_client": ["tv_embedded"]}},
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
