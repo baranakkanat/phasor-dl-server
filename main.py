@@ -27,18 +27,14 @@ MEDIA_TYPES = {
 
 
 def _download(url: str, fmt: str, tmp_dir: str) -> Path:
-    # Use a fixed stem so we can reliably find the output after postprocessing
     output_template = os.path.join(tmp_dir, "audio.%(ext)s")
 
-    # For wav: download bestaudio as-is, no conversion
-    # For mp3: download bestaudio and convert via FFmpegExtractAudio
     ydl_opts = {
-        "format": "bestaudio",
+        "format": "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best",
         "outtmpl": output_template,
         "noplaylist": True,
         "quiet": True,
         "no_warnings": True,
-        # YouTube bot detection bypass
         "extractor_args": {
             "youtube": {
                 "player_client": ["mweb"],
@@ -47,7 +43,13 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         },
         "cookiefile": None,
         "source_address": "0.0.0.0",
-        **({"postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "320"}]} if fmt == "mp3" else {}),
+        "postprocessors": [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": fmt,
+                **({"preferredquality": "320"} if fmt == "mp3" else {}),
+            }
+        ],
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -55,23 +57,15 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
 
     title = info.get("title", "audio").replace("/", "-").replace("\x00", "")
 
-    if fmt == "mp3":
-        # FFmpegExtractAudio will have produced audio.mp3
-        expected = Path(tmp_dir) / "audio.mp3"
-        if expected.exists():
-            final = Path(tmp_dir) / f"{title}.mp3"
-            expected.rename(final)
-            return final
-        matches = list(Path(tmp_dir).glob("*.mp3"))
-        if matches:
-            return matches[0]
-    else:
-        # wav: pick whatever bestaudio downloaded (webm/opus/m4a/etc.)
-        files = [f for f in Path(tmp_dir).iterdir() if f.suffix != ".part"]
-        if files:
-            final = Path(tmp_dir) / f"{title}{files[0].suffix}"
-            files[0].rename(final)
-            return final
+    expected = Path(tmp_dir) / f"audio.{fmt}"
+    if expected.exists():
+        final = Path(tmp_dir) / f"{title}.{fmt}"
+        expected.rename(final)
+        return final
+
+    matches = list(Path(tmp_dir).glob(f"*.{fmt}"))
+    if matches:
+        return matches[0]
 
     raise RuntimeError("No output file produced by yt-dlp")
 
