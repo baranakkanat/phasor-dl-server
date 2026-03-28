@@ -36,7 +36,7 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
     _dir = os.path.dirname(os.path.abspath(__file__))
     cookie_file = next((p for p in ['/app/cookies.txt', os.path.join(_dir, 'cookies.txt')] if os.path.exists(p)), get_cookie_file())
     ydl_opts = {
-        "format": "18/bestaudio/best",
+        "format": "bestaudio/best",
         "outtmpl": output_template,
         "noplaylist": True,
         "extractor_args": {"youtube": {"player_client": ["android"]}},
