@@ -91,6 +91,7 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         "quiet": True,
         "no_warnings": False,
         "no_check_formats": True,
+        "extractor_args": {"youtube": {"player_client": ["android_vr"]}},
         "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
     }
 
