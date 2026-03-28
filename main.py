@@ -95,8 +95,6 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
     }
 
-    if cookie_file:
-        ydl_opts["cookiefile"] = cookie_file
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
