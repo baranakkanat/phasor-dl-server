@@ -30,8 +30,10 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
     # Use a fixed stem so we can reliably find the output after postprocessing
     output_template = os.path.join(tmp_dir, "audio.%(ext)s")
 
+    # For wav: download bestaudio as-is, no conversion
+    # For mp3: download bestaudio and convert via FFmpegExtractAudio
     ydl_opts = {
-        "format": "bestaudio/best",
+        "format": "bestaudio",
         "outtmpl": output_template,
         "noplaylist": True,
         "quiet": True,
@@ -45,37 +47,33 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         },
         "cookiefile": None,
         "source_address": "0.0.0.0",
-        "postprocessors": [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": fmt,
-                **({"preferredquality": "320"} if fmt == "mp3" else {}),
-            }
-        ],
+        **({"postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "320"}]} if fmt == "mp3" else {}),
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
 
-    # After postprocessing the extension will be fmt; find that file
-    expected = Path(tmp_dir) / f"audio.{fmt}"
-    if expected.exists():
-        # Rename to the video title for a nicer download filename
-        title = info.get("title", "audio").replace("/", "-").replace("\x00", "")
-        final = Path(tmp_dir) / f"{title}.{fmt}"
-        expected.rename(final)
-        return final
+    title = info.get("title", "audio").replace("/", "-").replace("\x00", "")
 
-    # Fallback: pick any file with the right extension
-    matches = list(Path(tmp_dir).glob(f"*.{fmt}"))
-    if matches:
-        return matches[0]
+    if fmt == "mp3":
+        # FFmpegExtractAudio will have produced audio.mp3
+        expected = Path(tmp_dir) / "audio.mp3"
+        if expected.exists():
+            final = Path(tmp_dir) / f"{title}.mp3"
+            expected.rename(final)
+            return final
+        matches = list(Path(tmp_dir).glob("*.mp3"))
+        if matches:
+            return matches[0]
+    else:
+        # wav: pick whatever bestaudio downloaded (webm/opus/m4a/etc.)
+        files = [f for f in Path(tmp_dir).iterdir() if f.suffix != ".part"]
+        if files:
+            final = Path(tmp_dir) / f"{title}{files[0].suffix}"
+            files[0].rename(final)
+            return final
 
-    # Last resort: any file that isn't a temp partial
-    files = [f for f in Path(tmp_dir).iterdir() if f.suffix != ".part"]
-    if not files:
-        raise RuntimeError("No output file produced by yt-dlp")
-    return files[0]
+    raise RuntimeError("No output file produced by yt-dlp")
 
 
 @app.post("/download")
