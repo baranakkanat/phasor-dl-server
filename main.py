@@ -46,7 +46,7 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         "no_warnings": True,
         "no_check_formats": True,
         "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
-        "extractor_args": {"youtube": {"player_client": ["android"]}},
+        "extractor_args": {"youtube": {"player_client": ["ios"]}},
     }
 
     if cookie_file:
