@@ -33,7 +33,7 @@ def get_cookie_file():
 
 def _download(url: str, fmt: str, tmp_dir: str) -> Path:
     output_template = os.path.join(tmp_dir, "audio.%(ext)s")
-    cookie_file = get_cookie_file()
+    cookie_file = '/app/cookies.txt' if os.path.exists('/app/cookies.txt') else get_cookie_file()
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": output_template,
