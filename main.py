@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import os
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
@@ -16,13 +17,20 @@ class DownloadRequest(BaseModel):
     format: str = "mp3"
 
 SUPPORTED_FORMATS = {"mp3", "wav"}
-MEDIA_TYPES = {
-    "mp3": "audio/mpeg",
-    "wav": "audio/wav",
-}
+MEDIA_TYPES = {"mp3": "audio/mpeg", "wav": "audio/wav"}
+
+def get_cookie_file():
+    b64 = os.environ.get("YOUTUBE_COOKIES_B64")
+    if not b64:
+        return None
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="wb")
+    tmp.write(base64.b64decode(b64))
+    tmp.close()
+    return tmp.name
 
 def _download(url: str, fmt: str, tmp_dir: str) -> Path:
     output_template = os.path.join(tmp_dir, "audio.%(ext)s")
+    cookie_file = get_cookie_file()
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": output_template,
@@ -37,8 +45,12 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
             }
         ],
     }
+    if cookie_file:
+        ydl_opts["cookiefile"] = cookie_file
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
+
     title = info.get("title", "audio").replace("/", "-").replace("\x00", "")
     expected = Path(tmp_dir) / f"audio.{fmt}"
     if expected.exists():
