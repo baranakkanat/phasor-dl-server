@@ -23,10 +23,13 @@ def get_cookie_file():
     b64 = os.environ.get("YOUTUBE_COOKIES_B64")
     if not b64:
         return None
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="wb")
-    tmp.write(base64.b64decode(b64))
-    tmp.close()
-    return tmp.name
+    try:
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="wb")
+        tmp.write(base64.b64decode(b64))
+        tmp.close()
+        return tmp.name
+    except Exception:
+        return None
 
 def _download(url: str, fmt: str, tmp_dir: str) -> Path:
     output_template = os.path.join(tmp_dir, "audio.%(ext)s")
@@ -37,6 +40,11 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         "noplaylist": True,
         "quiet": True,
         "no_warnings": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["tv_embedded", "web_embedded", "ios"],
+            }
+        },
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
