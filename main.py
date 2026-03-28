@@ -36,7 +36,7 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
     _dir = os.path.dirname(os.path.abspath(__file__))
     cookie_file = next((p for p in ['/app/cookies.txt', os.path.join(_dir, 'cookies.txt')] if os.path.exists(p)), get_cookie_file())
     ydl_opts = {
-        "format": "bestaudio/best",
+        "format": "140/bestaudio[ext=m4a]/bestaudio/best",
         "outtmpl": output_template,
         "noplaylist": True,
         "extractor_args": {"youtube": {"player_client": ["android"]}},
@@ -44,13 +44,6 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         "quiet": True,
         "no_warnings": True,
         "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
-        "postprocessors": [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": fmt,
-                **({"preferredquality": "320"} if fmt == "mp3" else {}),
-            }
-        ],
     }
     if cookie_file:
         ydl_opts["cookiefile"] = cookie_file
