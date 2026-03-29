@@ -91,10 +91,14 @@ def _download(url: str, fmt: str, tmp_dir: str) -> Path:
         "quiet": True,
         "no_warnings": False,
         "no_check_formats": True,
-        "extractor_args": {"youtube": {"player_client": ["android_vr"]}},
         "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
     }
 
+
+    _dir = os.path.dirname(os.path.abspath(__file__))
+    cookie_file = next((p for p in [os.path.join(_dir, "cookies.txt")] if os.path.exists(p)), None)
+    if cookie_file:
+        ydl_opts["cookiefile"] = cookie_file
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
@@ -159,6 +163,11 @@ async def listformats(url: str = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"):
         "quiet": True,
         "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
     }
+    _dir = os.path.dirname(os.path.abspath(__file__))
+    cookie_file = next((p for p in [os.path.join(_dir, "cookies.txt")] if os.path.exists(p)), None)
+    if cookie_file:
+        ydl_opts["cookiefile"] = cookie_file
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
     formats = [{"id": f["format_id"], "ext": f["ext"], "acodec": f.get("acodec", "-"), "vcodec": f.get("vcodec", "-")} for f in info.get("formats", [])]
