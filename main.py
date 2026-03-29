@@ -42,24 +42,38 @@ def _download(url: str, tmp_dir: str) -> Path:
         "no_check_formats": True,
         "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
         "extractor_args": {"youtube": {"player_client": ["android_vr"]}},
+        "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],
+        "concurrent_fragment_downloads": 4,
+        "retries": 3,
+        "fragment_retries": 3,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
 
     title = info.get("title", "audio").replace("/", "-").replace("\x00", "")
-    for ext in ["m4a", "webm", "opus", "mp3", "wav"]:
+    
+    # mp3 file after postprocessing
+    mp3 = Path(tmp_dir) / "audio.mp3"
+    if mp3.exists():
+        final = Path(tmp_dir) / f"{title}.mp3"
+        mp3.rename(final)
+        return final
+
+    for ext in ["m4a", "webm", "opus", "wav"]:
         f = Path(tmp_dir) / f"audio.{ext}"
         if f.exists():
             final = Path(tmp_dir) / f"{title}.{ext}"
             f.rename(final)
             return final
+
     matches = list(Path(tmp_dir).glob("audio.*"))
     if matches:
         f = matches[0]
         final = Path(tmp_dir) / f"{title}{f.suffix}"
         f.rename(final)
         return final
+
     raise RuntimeError("No output file found")
 
 @app.post("/download")
@@ -75,9 +89,15 @@ async def download(req: DownloadRequest):
         raise HTTPException(status_code=400, detail=str(e).splitlines()[-1])
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
     ext = out_file.suffix.lstrip(".")
     media_types = {"mp3": "audio/mpeg", "m4a": "audio/mp4", "wav": "audio/wav", "webm": "audio/webm", "opus": "audio/ogg"}
-    return FileResponse(path=str(out_file), media_type=media_types.get(ext, "application/octet-stream"), filename=out_file.name)
+    return FileResponse(
+        path=str(out_file),
+        media_type=media_types.get(ext, "application/octet-stream"),
+        filename=out_file.name,
+        headers={"Content-Disposition": f'attachment; filename="{out_file.name}"'}
+    )
 
 @app.get("/health")
 async def health():
