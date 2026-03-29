@@ -42,7 +42,7 @@ def _download(url: str, tmp_dir: str) -> Path:
         "no_check_formats": True,
         "proxy": "http://d6614fc611ae6402e4e5:9d1d6659113db558@gw.dataimpulse.com:823",
         "extractor_args": {"youtube": {"player_client": ["android_vr"]}},
-        "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],
+        "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "320"}],
         "concurrent_fragment_downloads": 4,
         "retries": 3,
         "fragment_retries": 3,
